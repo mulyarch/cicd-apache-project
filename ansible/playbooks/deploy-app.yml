@@ -1,0 +1,22 @@
+---
+- name: Deploy Apache App to EKS
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    cluster_name: "cicd-apache-cluster"
+    region: "us-west-2"
+    ecr_repo: "{{ lookup('env', 'ECR_REPO_URL') }}"
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest') }}"
+
+  pre_tasks:
+    - name: Update kubeconfig
+      command: >
+        aws eks update-kubeconfig
+        --name {{ cluster_name }}
+        --region {{ region }}
+      changed_when: false
+
+  roles:
+    - k8s-deploy
