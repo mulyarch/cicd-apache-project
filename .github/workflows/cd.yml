@@ -1,0 +1,104 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: us-west-2
+  ECR_REPOSITORY: cicd-apache-app
+  EKS_CLUSTER: cicd-apache-cluster
+
+jobs:
+  terraform-deploy:
+    runs-on: ubuntu-latest
+    outputs:
+      ecr_url: ${{ steps.tf-output.outputs.ecr_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.2"
+
+      - name: Terraform Init & Apply
+        run: |
+          cd terraform
+          terraform init
+          terraform apply -auto-approve \
+            -var-file=environments/prod/terraform.tfvars
+
+      - name: Get Terraform outputs
+        id: tf-output
+        run: |
+          cd terraform
+          echo "ecr_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
+
+  build-push:
+    runs-on: ubuntu-latest
+    needs: terraform-deploy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push production image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          sed -i "s/__VERSION__/${IMAGE_TAG:0:7}/" app/index.html
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./app
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+                     $ECR_REGISTRY/$ECR_REPOSITORY:prod-latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:prod-latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [terraform-deploy, build-push]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        run: |
+          aws eks update-kubeconfig --name $EKS_CLUSTER --region $AWS_REGION
+
+      - name: Install Ansible + dependencies
+        run: |
+          pip install ansible kubernetes boto3
+          ansible-galaxy collection install kubernetes.core
+
+      - name: Deploy with Ansible
+        env:
+          ECR_REPO_URL: ${{ needs.terraform-deploy.outputs.ecr_url }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd ansible
+          ansible-playbook playbooks/deploy-app.yml
+
+      - name: Run integration tests
+        run: |
+          chmod +x tests/test_integration.sh
+          ./tests/test_integration.sh
