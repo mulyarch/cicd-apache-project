@@ -1,0 +1,35 @@
+---
+- name: Create namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ namespace }}"
+
+- name: Deploy application
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'deployment.yml.j2') | from_yaml }}"
+
+- name: Create service
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'service.yml.j2') | from_yaml }}"
+
+- name: Wait for deployment rollout
+  command: >
+    kubectl rollout status deployment/{{ app_name }}
+    -n {{ namespace }} --timeout=120s
+  register: rollout_result
+  changed_when: false
+
+- name: Get pod status
+  command: kubectl get pods -n {{ namespace }} -o wide
+  register: pod_status
+  changed_when: false
+
+- name: Display pod status
+  debug:
+    var: pod_status.stdout_lines
