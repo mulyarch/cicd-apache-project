@@ -1,5 +1,5 @@
 ---
-namespace: apache-app
+app_namespace: apache-app
 app_name: apache-hello
 replicas: 2
 container_port: 80

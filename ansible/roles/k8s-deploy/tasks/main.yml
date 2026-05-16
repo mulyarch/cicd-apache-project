@@ -2,31 +2,28 @@
 - name: Create namespace
   kubernetes.core.k8s:
     state: present
-    definition:
-      apiVersion: v1
-      kind: Namespace
-      metadata:
-        name: "{{ namespace }}"
+    kind: Namespace
+    name: "{{ app_namespace }}"
 
 - name: Deploy application
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'deployment.yml.j2') | from_yaml }}"
+    template: deployment.yml.j2
 
 - name: Create service
   kubernetes.core.k8s:
     state: present
-    definition: "{{ lookup('template', 'service.yml.j2') | from_yaml }}"
+    template: service.yml.j2
 
 - name: Wait for deployment rollout
   ansible.builtin.command: >
     kubectl rollout status deployment/{{ app_name }}
-    -n {{ namespace }} --timeout=120s
+    -n {{ app_namespace }} --timeout=120s
   register: rollout_result
   changed_when: false
 
 - name: Get pod status
-  ansible.builtin.command: kubectl get pods -n {{ namespace }} -o wide
+  ansible.builtin.command: kubectl get pods -n {{ app_namespace }} -o wide
   register: pod_status
   changed_when: false
 
