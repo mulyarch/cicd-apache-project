@@ -13,7 +13,6 @@ until [ -n "$LB_URL" ]; do
   LB_URL=$(kubectl get svc apache-hello-svc -n apache-app \
     -o jsonpath='{.status.loadBalancer.ingress.hostname}' 2>/dev/null || true)
 
-  # Also try .ip in case NLB returns IP instead of hostname
   if [ -z "$LB_URL" ]; then
     LB_URL=$(kubectl get svc apache-hello-svc -n apache-app \
       -o jsonpath='{.status.loadBalancer.ingress.ip}' 2>/dev/null || true)
