@@ -3,13 +3,31 @@ set -e
 
 echo "=== Integration Tests (Post-Deploy) ==="
 
-# Get the LoadBalancer URL
-LB_URL=$(kubectl get svc apache-hello-svc -n apache-app \
-  -o jsonpath='{.status.loadBalancer.ingress.hostname}')
+# Wait for LoadBalancer hostname to be assigned
+echo "Waiting for LoadBalancer to get a hostname..."
+MAX_LB_WAIT=30
+LB_WAIT=0
+LB_URL=""
+
+until [ -n "$LB_URL" ]; do
+  LB_URL=$(kubectl get svc apache-hello-svc -n apache-app \
+    -o jsonpath='{.status.loadBalancer.ingress.hostname}' 2>/dev/null)
+
+  if [ -z "$LB_URL" ]; then
+    LB_WAIT=$((LB_WAIT+1))
+    if [ $LB_WAIT -ge $MAX_LB_WAIT ]; then
+      echo "FAIL: LoadBalancer hostname not assigned after $MAX_LB_WAIT attempts"
+      kubectl get svc apache-hello-svc -n apache-app -o yaml
+      exit 1
+    fi
+    echo "Waiting for hostname... (attempt $LB_WAIT/$MAX_LB_WAIT)"
+    sleep 10
+  fi
+done
 
 echo "Testing endpoint: $LB_URL"
 
-# Wait for LB to be ready (can take 2-3 min)
+# Wait for LB to respond
 MAX_RETRIES=30
 RETRY=0
 until curl -s -o /dev/null -w "%{http_code}" "http://$LB_URL" | grep -q "200"; do
@@ -18,7 +36,7 @@ until curl -s -o /dev/null -w "%{http_code}" "http://$LB_URL" | grep -q "200"; d
     echo "FAIL: LB not responding after $MAX_RETRIES attempts"
     exit 1
   fi
-  echo "Waiting for LB... (attempt $RETRY/$MAX_RETRIES)"
+  echo "Waiting for LB to respond... (attempt $RETRY/$MAX_RETRIES)"
   sleep 10
 done
 
