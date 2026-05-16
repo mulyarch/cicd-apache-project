@@ -35,7 +35,8 @@ jobs:
 
       - name: Lint Ansible
         run: |
-          pip install ansible-lint
+          pip install ansible-lint ansible
+          ansible-galaxy collection install kubernetes.core
           cd ansible
           ansible-lint playbooks/deploy-app.yml
 
