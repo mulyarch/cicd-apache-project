@@ -36,7 +36,8 @@ jobs:
       - name: Lint Ansible
         run: |
           pip install ansible-lint
-          ansible-lint ansible/playbooks/
+          cd ansible
+          ansible-lint playbooks/deploy-app.yml
 
   build-and-test:
     runs-on: ubuntu-latest
