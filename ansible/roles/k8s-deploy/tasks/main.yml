@@ -19,17 +19,17 @@
     definition: "{{ lookup('template', 'service.yml.j2') | from_yaml }}"
 
 - name: Wait for deployment rollout
-  command: >
+  ansible.builtin.command: >
     kubectl rollout status deployment/{{ app_name }}
     -n {{ namespace }} --timeout=120s
   register: rollout_result
   changed_when: false
 
 - name: Get pod status
-  command: kubectl get pods -n {{ namespace }} -o wide
+  ansible.builtin.command: kubectl get pods -n {{ namespace }} -o wide
   register: pod_status
   changed_when: false
 
 - name: Display pod status
-  debug:
+  ansible.builtin.debug:
     var: pod_status.stdout_lines

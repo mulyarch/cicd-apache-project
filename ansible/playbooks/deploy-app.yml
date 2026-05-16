@@ -12,7 +12,7 @@
 
   pre_tasks:
     - name: Update kubeconfig
-      command: >
+      ansible.builtin.command: >
         aws eks update-kubeconfig
         --name {{ cluster_name }}
         --region {{ region }}
