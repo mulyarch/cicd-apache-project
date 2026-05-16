@@ -1,6 +1,6 @@
 ---
 - name: Deploy Apache App to EKS
-  hosts: localhost
+  hosts: [IP_ADDRESS]
   connection: local
   gather_facts: false
 
@@ -19,4 +19,4 @@
       changed_when: false
 
   roles:
-    - k8s-deploy
+    - role: ../roles/k8s-deploy

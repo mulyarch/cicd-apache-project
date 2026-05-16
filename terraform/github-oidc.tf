@@ -97,7 +97,7 @@ resource "aws_iam_role_policy" "github_terraform_state" {
   })
 }
 
-# VPC/EC2/EKS/IAM — Terraform needs these to manage infrastructure
+# VPC/EC2/EKS/IAM/KMS — Terraform needs these to manage infrastructure
 resource "aws_iam_role_policy" "github_infra" {
   name = "${var.project_name}-infra-management"
   role = aws_iam_role.github_actions.id
@@ -111,39 +111,11 @@ resource "aws_iam_role_policy" "github_infra" {
           "ec2:*",
           "elasticloadbalancing:*",
           "autoscaling:*",
-          "iam:CreateRole",
-          "iam:DeleteRole",
-          "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy",
-          "iam:PutRolePolicy",
-          "iam:DeleteRolePolicy",
-          "iam:GetRole",
-          "iam:GetRolePolicy",
-          "iam:ListRolePolicies",
-          "iam:ListAttachedRolePolicies",
-          "iam:PassRole",
-          "iam:CreateOpenIDConnectProvider",
-          "iam:DeleteOpenIDConnectProvider",
-          "iam:GetOpenIDConnectProvider",
-          "iam:TagOpenIDConnectProvider",
-          "iam:ListOpenIDConnectProviders",
-          "iam:TagRole",
-          "iam:UntagRole",
-          "iam:CreateInstanceProfile",
-          "iam:DeleteInstanceProfile",
-          "iam:GetInstanceProfile",
-          "iam:AddRoleToInstanceProfile",
-          "iam:RemoveRoleFromInstanceProfile",
-          "iam:ListInstanceProfilesForRole",
+          "iam:*",
           "eks:*",
           "ecr:*",
           "logs:*",
-          "kms:CreateKey",
-          "kms:DescribeKey",
-          "kms:CreateAlias",
-          "kms:DeleteAlias",
-          "kms:ListAliases",
-          "kms:TagResource"
+          "kms:*"
         ]
         Resource = "*"
       }
