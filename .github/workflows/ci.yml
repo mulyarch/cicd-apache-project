@@ -10,6 +10,10 @@ env:
   AWS_REGION: us-west-2
   ECR_REPOSITORY: cicd-apache-app
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
