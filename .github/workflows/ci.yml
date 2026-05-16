@@ -42,7 +42,7 @@ jobs:
           pip install ansible-lint ansible
           ansible-galaxy collection install kubernetes.core
           cd ansible
-          ansible-lint playbooks/deploy-app.yml
+          ansible-lint deploy-app.yml
 
   build-and-test:
     runs-on: ubuntu-latest
