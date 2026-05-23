@@ -1,5 +1,5 @@
 
-# 🚀 CI/CD Pipeline — Apache Hello World on AWS EKS
+# 🚀 CI/CD Pipeline — Apache Helo EARTH on AWS EKS
 
 A production-grade CI/CD pipeline demonstrating end-to-end automation from code commit to Kubernetes deployment on AWS. Built with Infrastructure as Code, containerization, configuration management, and automated testing.
 
