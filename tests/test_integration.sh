@@ -40,7 +40,7 @@ done
 echo "Test 1: HTTP 200... PASS"
 
 CONTENT=$(curl -s "http://$LB_URL")
-if echo "$CONTENT" | grep -q "Hello World"; then
+if echo "$CONTENT" | grep -q "Hello Lattice"; then
   echo "Test 2: Content check... PASS"
 else
   echo "Test 2: Content check... FAIL"
